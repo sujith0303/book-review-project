@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:14
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: bookdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  book-service:
+    image: sujith0303/book-service:1.0
+    container_name: book-service
+    restart: always
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgres://user:password@postgres:5432/bookdb
+
+  review-service:
+    image: sujith0303/review-service:1.0
+    container_name: review-service
+    restart: always
+    depends_on:
+      - book-service
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: postgres://user:password@postgres:5432/bookdb
+      BOOK_SERVICE_URL: http://book-service:8000/books
+
+volumes:
+  postgres_data:

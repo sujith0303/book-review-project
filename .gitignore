@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Virtual environment
+venv/
+ENV/
+env/
+.venv/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Database / storage
+*.sqlite3
+*.db
+*.sql
+*.bak
+dump.rdb
+data/
+
+# Docker
+*.pid
+*.seed
+*.bak
+docker-compose.override.yml
+.env
+
+# Node (if frontend later)
+node_modules/
+npm-debug.log
+yarn-error.log
