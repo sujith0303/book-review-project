@@ -1,50 +1,43 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
-from database import SessionLocal, engine, Base
-from models import Book
+from typing import List
+import uvicorn
 
-# Create tables
-Base.metadata.create_all(bind=engine)
-
-# FastAPI app
 app = FastAPI()
 
-# Pydantic schema
-class BookSchema(BaseModel):
+# Enable CORS for frontend at localhost:3000
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# In-memory database
+books_db = []
+book_id_counter = 1
+
+class Book(BaseModel):
     title: str
     author: str
-    description: str = None
+    description: str
 
-    class Config:
-        orm_mode = True
+class BookOut(Book):
+    id: int
 
-# Dependency to get DB session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+@app.get("/books", response_model=List[BookOut])
+def get_books():
+    return books_db
 
-# Create book
-@app.post("/books")
-def create_book(book: BookSchema, db: Session = Depends(get_db)):
-    new_book = Book(**book.dict())
-    db.add(new_book)
-    db.commit()
-    db.refresh(new_book)
-    return {"message": "Book created", "id": new_book.id}
+@app.post("/books", response_model=BookOut)
+def add_book(book: Book):
+    global book_id_counter
+    book_out = BookOut(id=book_id_counter, **book.dict())
+    books_db.append(book_out)
+    book_id_counter += 1
+    return book_out
 
-# List all books
-@app.get("/books")
-def list_books(db: Session = Depends(get_db)):
-    return db.query(Book).all()
-
-# Get a single book
-@app.get("/books/{book_id}")
-def get_book(book_id: int, db: Session = Depends(get_db)):
-    book = db.query(Book).filter(Book.id == book_id).first()
-    if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
-    return book
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

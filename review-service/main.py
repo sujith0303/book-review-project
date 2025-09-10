@@ -1,57 +1,42 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
-from database import SessionLocal, engine, Base
-from models import Review
-import requests
-import os
-
-# Create tables
-Base.metadata.create_all(bind=engine)
+from typing import List
+import uvicorn
 
 app = FastAPI()
 
-BOOK_SERVICE_URL = os.getenv("BOOK_SERVICE_URL", "http://localhost:8000/books")
+# Enable CORS for frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Pydantic schema
-class ReviewSchema(BaseModel):
+# In-memory database
+reviews_db = []
+review_id_counter = 1
+
+class Review(BaseModel):
     book_id: int
-    reviewer: str
-    content: str
-    rating: int
+    review: str
 
-    class Config:
-        orm_mode = True
+class ReviewOut(Review):
+    id: int
 
-# Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+@app.get("/reviews", response_model=List[ReviewOut])
+def get_reviews(book_id: int = Query(...)):
+    return [r for r in reviews_db if r.book_id == book_id]
 
-# Create review
-@app.post("/reviews")
-def create_review(review: ReviewSchema, db: Session = Depends(get_db)):
-    # Check if book exists in Book Service
-    try:
-        response = requests.get(BOOK_SERVICE_URL)
-        books = response.json()
-        if not any(book["id"] == review.book_id for book in books):
-            return {"error": "Book not found"}
-    except Exception as e:
-        return {"error": f"Cannot reach Book Service: {e}"}
+@app.post("/reviews", response_model=ReviewOut)
+def add_review(review: Review):
+    global review_id_counter
+    review_out = ReviewOut(id=review_id_counter, **review.dict())
+    reviews_db.append(review_out)
+    review_id_counter += 1
+    return review_out
 
-    new_review = Review(**review.dict())
-    db.add(new_review)
-    db.commit()
-    db.refresh(new_review)
-    return {"message": "Review added", "id": new_review.id}
-
-# List reviews
-@app.get("/reviews")
-def list_reviews(book_id: int = None, db: Session = Depends(get_db)):
-    if book_id:
-        return db.query(Review).filter(Review.book_id == book_id).all()
-    return db.query(Review).all()
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8001)
