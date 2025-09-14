@@ -68,3 +68,33 @@ Thumbs.db
 
 # Docker (optional)
 docker-compose.override.yml
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+venv/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+dist/
+build/
+
+# Docker
+*.log
+*.pid
+*.seed
+*.pid.lock
+*.env
+.dockerignore
+
+# macOS
+.DS_Store
+
+# VSCode / IDE
+.vscode/
+.idea/

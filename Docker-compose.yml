@@ -1,24 +1,18 @@
 services:
   book-service:
-    build:
-      context: ./book-service
-      dockerfile: Dockerfile.book
+    image: sujith0303/book-service:latest
     container_name: book-service
     ports:
       - "8000:8000"
 
   review-service:
-    build:
-      context: ./review-service
-      dockerfile: Dockerfile.review
+    image: sujith0303/review-service:latest
     container_name: review-service
     ports:
       - "8001:8000"
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: sujith0303/frontend:latest
     container_name: frontend
     ports:
       - "3000:3000"

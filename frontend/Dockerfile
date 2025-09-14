@@ -1,17 +1,18 @@
-# Use Node.js Alpine image
+# Dockerfile.frontend
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package.json and package-lock.json first to install dependencies
+# Copy package files and install dependencies
 COPY package*.json ./
 RUN npm install
 
-# Copy the rest of the frontend code
+# Copy all frontend code
 COPY . .
 
-# Build the Next.js app
+# Build frontend
 RUN npm run build
 
-# Start the app
+# Expose port and run
+EXPOSE 3000
 CMD ["npm", "start"]
