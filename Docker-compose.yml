@@ -1,21 +1,60 @@
+
 services:
+  db:
+    image: postgres:15
+    container_name: books-db
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: booksdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d booksdb"]  # Added database name
+      interval: 5s
+      retries: 10  # Increased retries
+      timeout: 5s
+      start_period: 10s
+
   book-service:
-    image: sujith0303/book-service:latest
+    build: ./book-service
     container_name: book-service
     ports:
       - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: booksdb
+    restart: unless-stopped
 
   review-service:
-    image: sujith0303/review-service:latest
+    build: ./review-service
     container_name: review-service
     ports:
-      - "8001:8000"
-
-  frontend:
-    image: sujith0303/frontend:latest
-    container_name: frontend
-    ports:
-      - "3000:3000"
+      - "8002:8000"
     depends_on:
-      - book-service
-      - review-service
+      db:
+        condition: service_healthy
+      book-service:  # Add dependency on book-service
+        condition: service_started
+    environment:
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: booksdb
+    restart: unless-stopped
+  
+  
+
+volumes:
+  db_data:
